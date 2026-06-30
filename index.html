@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OR Techniques – Interactive Simulator</title>
+  <meta name="description" content="Interactive Operational Research simulator covering Hungarian Algorithm, Transportation Problems (NWCR, LCC, VAM), and Sequencing Problem with step-by-step solutions." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Animated background -->
+  <div class="bg-grid"></div>
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="8" fill="url(#lg)"/>
+          <path d="M8 24L16 8L24 24" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M11 19h10" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
+        </svg>
+        <span>OR<strong>Sim</strong></span>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">&#9776;</button>
+    </div>
+    <div class="sidebar-section">
+      <p class="sidebar-label">Techniques</p>
+      <ul class="nav-list">
+        <li><button class="nav-item active" data-page="home" id="nav-home">
+          <span class="nav-icon">🏠</span><span class="nav-text">Overview</span>
+        </button></li>
+        <li><button class="nav-item" data-page="hungarian" id="nav-hungarian">
+          <span class="nav-icon">♟</span><span class="nav-text">Hungarian Algorithm</span>
+          <span class="nav-badge">Assignment</span>
+        </button></li>
+        <li><button class="nav-item" data-page="nwcr" id="nav-nwcr">
+          <span class="nav-icon">🧭</span><span class="nav-text">NW Corner Rule</span>
+          <span class="nav-badge">Transport</span>
+        </button></li>
+        <li><button class="nav-item" data-page="lcc" id="nav-lcc">
+          <span class="nav-icon">💰</span><span class="nav-text">Least Cost Cell</span>
+          <span class="nav-badge">Transport</span>
+        </button></li>
+        <li><button class="nav-item" data-page="vam" id="nav-vam">
+          <span class="nav-icon">📊</span><span class="nav-text">Vogel's Method</span>
+          <span class="nav-badge">Transport</span>
+        </button></li>
+        <li><button class="nav-item" data-page="sequencing" id="nav-sequencing">
+          <span class="nav-icon">⏱</span><span class="nav-text">Sequencing Problem</span>
+          <span class="nav-badge">Johnson's</span>
+        </button></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content" id="mainContent">
+    <div class="page active" id="page-home"></div>
+    <div class="page" id="page-hungarian"></div>
+    <div class="page" id="page-nwcr"></div>
+    <div class="page" id="page-lcc"></div>
+    <div class="page" id="page-vam"></div>
+    <div class="page" id="page-sequencing"></div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
