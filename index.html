@@ -6,8 +6,25 @@
   <title>OR Techniques – Interactive Simulator</title>
   <meta name="description" content="Interactive Operational Research simulator covering Hungarian Algorithm, Transportation Problems (NWCR, LCC, VAM), and Sequencing Problem with step-by-step solutions." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
   <link rel="stylesheet" href="style.css" />
+  <!-- UI/UX Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <!-- Lenis smooth scroll -->
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+  <!-- Tippy.js tooltips -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tippy.js@6/dist/tippy.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tippy.js@6/dist/themes/light.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tippy.js@6/dist/tippy.umd.min.js"></script>
+  <!-- CountUp.js -->
+  <script src="https://cdn.jsdelivr.net/npm/countup.js@2.8.0/dist/countUp.umd.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
   <!-- Animated background -->
@@ -34,26 +51,26 @@
       <p class="sidebar-label">Techniques</p>
       <ul class="nav-list">
         <li><button class="nav-item active" data-page="home" id="nav-home">
-          <span class="nav-icon">🏠</span><span class="nav-text">Overview</span>
+          <span class="nav-icon"><i data-lucide="layout-grid"></i></span><span class="nav-text">Overview</span>
         </button></li>
         <li><button class="nav-item" data-page="hungarian" id="nav-hungarian">
-          <span class="nav-icon">♟</span><span class="nav-text">Hungarian Algorithm</span>
+          <span class="nav-icon"><i data-lucide="git-merge"></i></span><span class="nav-text">Hungarian Algorithm</span>
           <span class="nav-badge">Assignment</span>
         </button></li>
         <li><button class="nav-item" data-page="nwcr" id="nav-nwcr">
-          <span class="nav-icon">🧭</span><span class="nav-text">NW Corner Rule</span>
+          <span class="nav-icon"><i data-lucide="compass"></i></span><span class="nav-text">NW Corner Rule</span>
           <span class="nav-badge">Transport</span>
         </button></li>
         <li><button class="nav-item" data-page="lcc" id="nav-lcc">
-          <span class="nav-icon">💰</span><span class="nav-text">Least Cost Cell</span>
+          <span class="nav-icon"><i data-lucide="coins"></i></span><span class="nav-text">Least Cost Cell</span>
           <span class="nav-badge">Transport</span>
         </button></li>
         <li><button class="nav-item" data-page="vam" id="nav-vam">
-          <span class="nav-icon">📊</span><span class="nav-text">Vogel's Method</span>
+          <span class="nav-icon"><i data-lucide="trending-up"></i></span><span class="nav-text">Vogel's Method</span>
           <span class="nav-badge">Transport</span>
         </button></li>
         <li><button class="nav-item" data-page="sequencing" id="nav-sequencing">
-          <span class="nav-icon">⏱</span><span class="nav-text">Sequencing Problem</span>
+          <span class="nav-icon"><i data-lucide="clock"></i></span><span class="nav-text">Sequencing Problem</span>
           <span class="nav-badge">Johnson's</span>
         </button></li>
       </ul>

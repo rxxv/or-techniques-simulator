@@ -20,6 +20,9 @@ function navigate(page) {
   document.getElementById(`page-${page}`).classList.add('active');
   document.getElementById(`nav-${page}`)?.classList.add('active');
   currentPage = page;
+  if (page === 'home') {
+    buildHome();
+  }
 }
 
 document.querySelectorAll('.nav-item').forEach(btn => {
@@ -59,7 +62,103 @@ function colorsFor(n) {
   return Array.from({ length: n }, (_, i) => palette[i % palette.length]);
 }
 
-// ─── HOME PAGE ───────────────────────────────────────────────────────────────
+// ─── GSAP ANIMATIONS ─────────────────────────────────────────────────────────
+function animateSteps(containerSelector) {
+  if (typeof gsap === 'undefined') return;
+  gsap.fromTo(
+    `${containerSelector} .step-card`,
+    { opacity: 0, y: 24, scale: 0.97 },
+    { opacity: 1, y: 0, scale: 1, duration: 0.45, stagger: 0.08, ease: 'power2.out' }
+  );
+}
+
+function animateResult(selector) {
+  if (typeof gsap === 'undefined') return;
+  gsap.fromTo(
+    selector,
+    { opacity: 0, y: 20 },
+    { opacity: 1, y: 0, duration: 0.5, ease: 'back.out(1.4)' }
+  );
+}
+
+function showToast(msg, type = 'success') {
+  if (typeof Toastify === 'undefined') return;
+  const bg = type === 'success' ? '#ffffff' : '#ffffff';
+  const borderLeft = type === 'success' ? '4px solid var(--success)' : '4px solid var(--danger)';
+  Toastify({
+    text: msg, duration: 3500, gravity: 'bottom', position: 'right',
+    style: { background: bg, borderRadius: '6px', fontFamily: "'Plus Jakarta Sans',sans-serif",
+             fontSize: '0.85rem', fontWeight: '700', padding: '12px 20px',
+             boxShadow: '4px 4px 0px rgba(42,62,89,0.1)', border: '1px solid var(--border)',
+             borderLeft, color: '#1c1f24' },
+    stopOnFocus: true
+  }).showToast();
+}
+
+// ─── CHART.JS COST CHART ─────────────────────────────────────────────────────
+let _costChartInstance = null;
+function renderCostChart(canvasId, labels, data, colors) {
+  if (typeof Chart === 'undefined') return;
+  const ctx = document.getElementById(canvasId)?.getContext('2d');
+  if (!ctx) return;
+  if (_costChartInstance) { _costChartInstance.destroy(); _costChartInstance = null; }
+  _costChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: colors, borderRadius: 4, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#505663', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#e3ded5' } },
+        y: { ticks: { color: '#505663', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#e3ded5' } }
+      }
+    }
+  });
+}
+
+// ─── LENIS SMOOTH SCROLL ─────────────────────────────────────────────────────
+function initLenis() {
+  if (typeof Lenis === 'undefined') return;
+  const lenis = new Lenis({
+    duration: 1.2,
+    easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    smoothWheel: true,
+  });
+  function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+  requestAnimationFrame(raf);
+}
+
+// ─── TIPPY TOOLTIPS ──────────────────────────────────────────────────────────
+function initTooltips() {
+  if (typeof tippy === 'undefined') return;
+  // Nav items
+  tippy('[data-page="hungarian"]', { content: 'Optimal assignment — minimise total cost', theme: 'light', placement: 'right', delay: [300, 0] });
+  tippy('[data-page="nwcr"]',      { content: 'Quick initial BFS — ignores costs', theme: 'light', placement: 'right', delay: [300, 0] });
+  tippy('[data-page="lcc"]',       { content: 'Greedy BFS — always picks cheapest cell', theme: 'light', placement: 'right', delay: [300, 0] });
+  tippy('[data-page="vam"]',       { content: 'Penalty-based BFS — near-optimal result', theme: 'light', placement: 'right', delay: [300, 0] });
+  tippy('[data-page="sequencing"]',{ content: 'Johnson\'s rule — minimise makespan on 2 machines', theme: 'light', placement: 'right', delay: [300, 0] });
+}
+
+function attachSolveTip(selector, content) {
+  if (typeof tippy === 'undefined') return;
+  const el = document.querySelector(selector);
+  if (el) tippy(el, { content, theme: 'light', placement: 'top' });
+}
+
+// ─── COUNTUP ANIMATED NUMBERS ────────────────────────────────────────────────
+function animateCount(elementId, endVal, prefix = '', suffix = '', decimals = 0) {
+  if (typeof CountUp === 'undefined' || typeof CountUp.CountUp === 'undefined') return;
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const cu = new CountUp.CountUp(elementId, endVal, {
+    startVal: 0, duration: 1.4, useEasing: true, useGrouping: true,
+    prefix, suffix, decimalPlaces: decimals
+  });
+  if (!cu.error) cu.start();
+}
+
 function buildHome() {
   const el = $('page-home');
   el.innerHTML = `
@@ -69,37 +168,37 @@ function buildHome() {
       <p>Step-by-step solver and visualiser for core OR methods. Input your own data or use built-in examples.</p>
     </div>
     <div class="technique-cards">
-      <div class="technique-card" onclick="navigate('hungarian')" style="--card-gradient: linear-gradient(90deg,#6366f1,#8b5cf6)">
-        <div class="tc-icon">♟</div>
-        <div class="tc-tag" style="background:rgba(99,102,241,0.15);color:#818cf8;">Assignment</div>
+      <div class="technique-card" onclick="navigate('hungarian')" style="--card-gradient: var(--primary)">
+        <div class="tc-icon"><i data-lucide="git-merge"></i></div>
+        <div class="tc-tag" style="background:rgba(42,62,89,0.06);color:var(--primary);border-color:rgba(42,62,89,0.15)">Assignment</div>
         <h3>Hungarian Algorithm</h3>
         <p>Optimally assign <em>n</em> workers to <em>n</em> jobs minimising total cost via row/column reduction.</p>
         <span class="tc-arrow">→</span>
       </div>
-      <div class="technique-card" onclick="navigate('nwcr')" style="--card-gradient: linear-gradient(90deg,#06b6d4,#3b82f6)">
-        <div class="tc-icon">🧭</div>
-        <div class="tc-tag" style="background:rgba(6,182,212,0.15);color:#22d3ee;">Transportation</div>
+      <div class="technique-card" onclick="navigate('nwcr')" style="--card-gradient: var(--accent)">
+        <div class="tc-icon"><i data-lucide="compass"></i></div>
+        <div class="tc-tag" style="background:rgba(91,112,101,0.06);color:var(--accent2);border-color:rgba(91,112,101,0.15)">Transportation</div>
         <h3>NW Corner Rule</h3>
         <p>Initial feasible solution starting from the top-left (north-west) corner of the cost matrix.</p>
         <span class="tc-arrow">→</span>
       </div>
-      <div class="technique-card" onclick="navigate('lcc')" style="--card-gradient: linear-gradient(90deg,#10b981,#06b6d4)">
-        <div class="tc-icon">💰</div>
-        <div class="tc-tag" style="background:rgba(16,185,129,0.15);color:#34d399;">Transportation</div>
+      <div class="technique-card" onclick="navigate('lcc')" style="--card-gradient: var(--success)">
+        <div class="tc-icon"><i data-lucide="coins"></i></div>
+        <div class="tc-tag" style="background:rgba(62,111,81,0.06);color:var(--success);border-color:rgba(62,111,81,0.15)">Transportation</div>
         <h3>Least Cost Cell</h3>
         <p>Greedy method allocating to the cheapest available cell at each step to reduce initial cost.</p>
         <span class="tc-arrow">→</span>
       </div>
-      <div class="technique-card" onclick="navigate('vam')" style="--card-gradient: linear-gradient(90deg,#f59e0b,#ef4444)">
-        <div class="tc-icon">📊</div>
-        <div class="tc-tag" style="background:rgba(245,158,11,0.15);color:#fbbf24;">Transportation</div>
+      <div class="technique-card" onclick="navigate('vam')" style="--card-gradient: var(--warning)">
+        <div class="tc-icon"><i data-lucide="trending-up"></i></div>
+        <div class="tc-tag" style="background:rgba(176,122,60,0.06);color:var(--warning);border-color:rgba(176,122,60,0.15)">Transportation</div>
         <h3>Vogel's Approximation</h3>
         <p>Penalty-based method giving near-optimal initial BFS using opportunity cost differences.</p>
         <span class="tc-arrow">→</span>
       </div>
-      <div class="technique-card" onclick="navigate('sequencing')" style="--card-gradient: linear-gradient(90deg,#ec4899,#8b5cf6)">
-        <div class="tc-icon">⏱</div>
-        <div class="tc-tag" style="background:rgba(236,72,153,0.15);color:#f472b6;">Sequencing</div>
+      <div class="technique-card" onclick="navigate('sequencing')" style="--card-gradient: var(--secondary)">
+        <div class="tc-icon"><i data-lucide="clock"></i></div>
+        <div class="tc-tag" style="background:rgba(204,90,55,0.06);color:var(--secondary);border-color:rgba(204,90,55,0.15)">Sequencing</div>
         <h3>Johnson's Algorithm</h3>
         <p>Optimal n-job 2-machine sequencing minimising total makespan using Johnson's rule.</p>
         <span class="tc-arrow">→</span>
@@ -108,22 +207,23 @@ function buildHome() {
     <div class="separator"></div>
     <div class="grid-3" style="gap:16px;margin-top:0">
       <div class="card" style="text-align:center">
-        <div style="font-size:2rem;margin-bottom:8px">🎯</div>
+        <div style="font-size:2rem;margin-bottom:8px;color:var(--primary)"><i data-lucide="check-square" style="width:36px;height:36px;stroke-width:1.5"></i></div>
         <div style="font-weight:700;color:var(--text)">Step-by-Step</div>
         <div class="fs-sm text-muted mt-8">Every iteration animated with colour-coded highlights</div>
       </div>
       <div class="card" style="text-align:center">
-        <div style="font-size:2rem;margin-bottom:8px">📝</div>
+        <div style="font-size:2rem;margin-bottom:8px;color:var(--secondary)"><i data-lucide="edit-3" style="width:36px;height:36px;stroke-width:1.5"></i></div>
         <div style="font-weight:700;color:var(--text)">Custom Input</div>
         <div class="fs-sm text-muted mt-8">Enter your own matrix size and cost values</div>
       </div>
       <div class="card" style="text-align:center">
-        <div style="font-size:2rem;margin-bottom:8px">📊</div>
+        <div style="font-size:2rem;margin-bottom:8px;color:var(--accent)"><i data-lucide="bar-chart-2" style="width:36px;height:36px;stroke-width:1.5"></i></div>
         <div style="font-weight:700;color:var(--text)">Instant Results</div>
         <div class="fs-sm text-muted mt-8">Optimal cost, assignments, and Gantt charts</div>
       </div>
     </div>
   `;
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -282,13 +382,16 @@ function hungarianSolve() {
     stepsEl.innerHTML += hungarianRenderStep(s, si + 1, n);
   });
 
+  // Animate steps in
+  animateSteps('#h-steps');
+
   // Result
   const workerLabels = Array.from({ length: n }, (_, i) => `Worker ${i + 1}`);
   const jobLabels = Array.from({ length: n }, (_, i) => `Job ${i + 1}`);
   $('h-result').innerHTML = `
     <div class="result-card">
       <div class="result-title">✅ Optimal Solution Found</div>
-      <div class="result-value">Total Cost = ${totalCost}</div>
+      <div class="result-value">Total Cost = <span id="h-cost-display">${totalCost}</span></div>
       <div class="result-detail">Assignments:</div>
       <div class="result-row">
         ${assignment.map(([i, j]) => `
@@ -299,7 +402,21 @@ function hungarianSolve() {
             <span class="stat-chip green" style="padding:3px 10px;font-size:0.75rem">Cost: ${hMatrix[i][j]}</span>
           </div>`).join('')}
       </div>
+      <div style="margin-top:20px">
+        <div style="font-size:0.75rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Cost per Assignment</div>
+        <div style="height:140px"><canvas id="h-cost-chart"></canvas></div>
+      </div>
     </div>`;
+  animateResult('#h-result .result-card');
+  showToast(`✅ Optimal assignment found — Total cost: ${totalCost}`);
+  // Render chart after DOM update
+  setTimeout(() => {
+    animateCount('h-cost-display', totalCost);
+    const chartLabels = assignment.map(([i,j]) => `W${i+1}→J${j+1}`);
+    const chartData   = assignment.map(([i,j]) => hMatrix[i][j]);
+    const chartColors = colorsFor(assignment.length);
+    renderCostChart('h-cost-chart', chartLabels, chartData, chartColors);
+  }, 50);
 }
 
 function hungarianCover(mat, n) {
@@ -338,23 +455,29 @@ function hungarianCover(mat, n) {
 }
 
 function hungarianAssign(mat, n) {
-  // Simple greedy assignment on zeros
-  const rowUsed = Array(n).fill(false);
-  const colUsed = Array(n).fill(false);
-  const result = [];
-  // Try to assign greedily by row
-  function bt(row) {
-    if (row === n) return true;
-    for (let j = 0; j < n; j++) {
-      if (!colUsed[j] && mat[row][j] === 0) {
-        colUsed[j] = true; result.push([row, j]);
-        if (bt(row + 1)) return true;
-        colUsed[j] = false; result.pop();
+  const match = Array(n).fill(-1);
+  function dfs(u, visited) {
+    for (let v = 0; v < n; v++) {
+      if (mat[u][v] === 0 && !visited[v]) {
+        visited[v] = true;
+        if (match[v] < 0 || dfs(match[v], visited)) {
+          match[v] = u;
+          return true;
+        }
       }
     }
     return false;
   }
-  bt(0);
+  for (let i = 0; i < n; i++) {
+    const visited = Array(n).fill(false);
+    dfs(i, visited);
+  }
+  const result = [];
+  for (let j = 0; j < n; j++) {
+    if (match[j] >= 0) {
+      result.push([match[j], j]);
+    }
+  }
   return result;
 }
 
@@ -428,7 +551,7 @@ function buildTransportInputUI(prefix, title, subtitle, solverFn, exampleFn) {
         </div>
         <div id="${prefix}-matrix-container" class="mt-16"></div>
         <div class="btn-group mt-16" id="${prefix}-solve-btns" style="display:none">
-          <button class="btn btn-primary" onclick="${solverFn}()">▶ Solve Step-by-Step</button>
+          <button class="btn btn-primary" onclick="${solverFn}()" data-tippy-content="Solve the matrix step-by-step">▶ Solve Step-by-Step</button>
           <button class="btn btn-secondary btn-sm" onclick="${prefix}Reset()">Reset</button>
         </div>
       </div>
@@ -437,7 +560,7 @@ function buildTransportInputUI(prefix, title, subtitle, solverFn, exampleFn) {
     <div id="${prefix}-steps" class="steps-container"></div>
     <div id="${prefix}-result"></div>
   `;
-  exampleFn();
+  window[exampleFn]();
 }
 
 function transportRenderInput(prefix, costs, supply, demand) {
@@ -480,8 +603,17 @@ function transportReadInputs(prefix) {
   const ts = supply.reduce((a, b) => a + b, 0);
   const td = demand.reduce((a, b) => a + b, 0);
   if (ts !== td) {
-    if (ts > td) { demand.push(ts - td); costs.forEach(r => r.push(0)); }
-    else { supply.push(td - ts); costs.push(Array(costs[0].length).fill(0)); }
+    let msg = '';
+    if (ts > td) {
+      msg = `⚠️ Unbalanced problem: Total Supply (${ts}) > Total Demand (${td}). Added a Dummy Destination (D${cols + 1}) with 0 cost to balance.`;
+      demand.push(ts - td);
+      costs.forEach(r => r.push(0));
+    } else {
+      msg = `⚠️ Unbalanced problem: Total Supply (${ts}) < Total Demand (${td}). Added a Dummy Source (S${rows + 1}) with 0 cost to balance.`;
+      supply.push(td - ts);
+      costs.push(Array(costs[0].length).fill(0));
+    }
+    showToast(msg, 'warning');
   }
   return { costs, supply, demand };
 }
@@ -504,6 +636,7 @@ function transportRenderAllocation(prefix, alloc, costs, supply, demand, method,
         </div>
       </div>`;
   });
+  animateSteps(`#${prefix}-steps`);
 
   // Total cost
   let total = 0;
@@ -518,7 +651,7 @@ function transportRenderAllocation(prefix, alloc, costs, supply, demand, method,
   $(`${prefix}-result`).innerHTML = `
     <div class="result-card">
       <div class="result-title">✅ ${method} – Initial BFS Found</div>
-      <div class="result-value">Total Transportation Cost = ${total}</div>
+      <div class="result-value">Total Transportation Cost = <span id="${prefix}-cost-display">${total}</span></div>
       <div class="separator" style="margin:16px 0"></div>
       <div style="font-size:0.8rem;font-weight:600;color:var(--text3);margin-bottom:12px">ALLOCATION DETAILS</div>
       <div class="matrix-container">
@@ -539,7 +672,19 @@ function transportRenderAllocation(prefix, alloc, costs, supply, demand, method,
           </tbody>
         </table>
       </div>
+      <div style="margin-top:20px">
+        <div style="font-size:0.75rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Cost Breakdown by Route</div>
+        <div style="height:150px"><canvas id="${prefix}-cost-chart"></canvas></div>
+      </div>
     </div>`;
+  animateResult(`#${prefix}-result .result-card`);
+  showToast(`✅ ${method} complete — Total cost: ${total}`);
+  setTimeout(() => {
+    const chartLabels = assignments.map(a => `${a.src}→${a.dst}`);
+    const chartData   = assignments.map(a => a.qty * a.cost);
+    const chartColors = colorsFor(assignments.length);
+    renderCostChart(`${prefix}-cost-chart`, chartLabels, chartData, chartColors);
+  }, 50);
 }
 
 function transportRenderTable(prefix, alloc, costs, srcLabels, dstLabels, highlighted, supply, demand) {
@@ -962,6 +1107,7 @@ function seqSolve() {
         </div>
       </div>`;
   });
+  animateSteps('#seq-steps');
 
   // Compute Gantt timeline
   const timeline = computeGantt(sequence, jobs);
@@ -971,7 +1117,7 @@ function seqSolve() {
   $('seq-result').innerHTML = `
     <div class="result-card">
       <div class="result-title">✅ Optimal Sequence Found (Johnson's Algorithm)</div>
-      <div class="result-value">Makespan = ${makespan} units</div>
+      <div class="result-value">Makespan = <span id="seq-makespan-display">${makespan}</span> units</div>
       <div class="result-detail" style="margin-top:8px">
         Optimal Sequence: <strong class="font-mono" style="color:var(--primary2)">${sequence.map(j => `J${j.id}`).join(' → ')}</strong>
       </div>
@@ -991,6 +1137,10 @@ function seqSolve() {
         </table>
       </div>
     </div>`;
+
+  animateResult('#seq-result .result-card');
+  showToast(`✅ Johnson's Algorithm complete — Makespan: ${makespan} units`);
+  setTimeout(() => animateCount('seq-makespan-display', makespan), 50);
 
   // Gantt chart
   renderGantt(sequence, timeline, makespan);
@@ -1070,6 +1220,8 @@ function init() {
   buildVAM();
   buildSequencing();
   navigate('home');
+  initLenis();
+  initTooltips();
 }
 
 document.addEventListener('DOMContentLoaded', init);
