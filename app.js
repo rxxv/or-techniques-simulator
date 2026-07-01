@@ -696,12 +696,23 @@ function transportRenderTable(prefix, alloc, costs, srcLabels, dstLabels, highli
     html += `<tr><th>${srcLabels[i]}</th>`;
     for (let j = 0; j < n; j++) {
       const isHL = highlighted && highlighted.r === i && highlighted.c === j;
+      const isCrossed = alloc[i][j] === 0 && (
+        (supply && supply[i] === 0) || 
+        (demand && demand[j] === 0)
+      );
       let cls = '';
       if (isHL) cls = 'selected-cell';
       else if (alloc[i][j] > 0) cls = 'allocated-cell';
+      else if (isCrossed) cls = 'crossed-cell';
+      
       html += `<td class="${cls}">`;
-      if (alloc[i][j] > 0) html += `<span style="display:block;font-size:0.65rem;color:var(--text3)">${costs[i][j]}</span><strong>${alloc[i][j]}</strong>`;
-      else html += `<span style="color:var(--text3)">${costs[i][j]}</span>`;
+      if (alloc[i][j] > 0) {
+        html += `<span style="display:block;font-size:0.65rem;color:var(--text3)">${costs[i][j]}</span><strong>${alloc[i][j]}</strong>`;
+      } else if (isCrossed) {
+        html += `<span style="color:var(--text3);text-decoration:line-through">${costs[i][j]}</span><span style="color:var(--danger);font-weight:bold;margin-left:4px">×</span>`;
+      } else {
+        html += `<span style="color:var(--text3)">${costs[i][j]}</span>`;
+      }
       html += `</td>`;
     }
     const sup = supply ? supply[i] : '—';
