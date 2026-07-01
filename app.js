@@ -935,15 +935,30 @@ function vamSolve() {
 
     // Compute row penalties
     const rowPenalties = Array(m).fill(-1);
+    const rowCalcLogs = [];
     for (const i of activeRows) {
       const vals = activeCols.map(j => costs[i][j]);
       rowPenalties[i] = vamPenalty(vals);
+      const sorted = [...vals].sort((a, b) => a - b);
+      if (sorted.length >= 2) {
+        rowCalcLogs.push(`Row ${srcLabels[i]}: Costs = [${vals.join(', ')}] ➔ Smallest=${sorted[0]}, 2nd smallest=${sorted[1]} ➔ Penalty = ${sorted[1]} - ${sorted[0]} = <strong>${rowPenalties[i]}</strong>`);
+      } else if (sorted.length === 1) {
+        rowCalcLogs.push(`Row ${srcLabels[i]}: Cost = [${vals[0]}] ➔ Only 1 cost left ➔ Penalty = <strong>0</strong>`);
+      }
     }
+
     // Compute col penalties
     const colPenalties = Array(n).fill(-1);
+    const colCalcLogs = [];
     for (const j of activeCols) {
       const vals = activeRows.map(i => costs[i][j]);
       colPenalties[j] = vamPenalty(vals);
+      const sorted = [...vals].sort((a, b) => a - b);
+      if (sorted.length >= 2) {
+        colCalcLogs.push(`Col ${dstLabels[j]}: Costs = [${vals.join(', ')}] ➔ Smallest=${sorted[0]}, 2nd smallest=${sorted[1]} ➔ Penalty = ${sorted[1]} - ${sorted[0]} = <strong>${colPenalties[j]}</strong>`);
+      } else if (sorted.length === 1) {
+        colCalcLogs.push(`Col ${dstLabels[j]}: Cost = [${vals[0]}] ➔ Only 1 cost left ➔ Penalty = <strong>0</strong>`);
+      }
     }
 
     // Find max penalty
@@ -967,9 +982,29 @@ function vamSolve() {
     if (dem[bc] === 0) { elimCols[bc] = true; note += ` Col ${dstLabels[bc]} exhausted.`; }
 
     const penLabel = isRow ? `Row ${srcLabels[penIdx]} (penalty=${maxPen})` : `Column ${dstLabels[penIdx]} (penalty=${maxPen})`;
+    
+    // Detailed penalty calculation log block
+    const penaltyDetailsHtml = `
+      <div style="margin-top: 14px; padding: 12px 16px; background: var(--bg2); border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.8rem;">
+        <div style="font-weight: 700; color: var(--primary2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; font-family:'Plus Jakarta Sans',sans-serif">Penalty Calculations for active lines:</div>
+        <div style="margin-bottom: 8px;">
+          <strong style="color: var(--secondary); font-family:'Plus Jakarta Sans',sans-serif">Row Penalties:</strong>
+          <ul style="margin-left: 18px; list-style-type: disc; margin-top: 4px; color: var(--text2)">
+            ${rowCalcLogs.map(log => `<li style="margin-bottom: 3px;">${log}</li>`).join('')}
+          </ul>
+        </div>
+        <div>
+          <strong style="color: var(--secondary); font-family:'Plus Jakarta Sans',sans-serif">Column Penalties:</strong>
+          <ul style="margin-left: 18px; list-style-type: disc; margin-top: 4px; color: var(--text2)">
+            ${colCalcLogs.map(log => `<li style="margin-bottom: 3px;">${log}</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+    `;
+
     steps.push({
       title: `Step ${stepNum} – ${penLabel} → Allocate to (${srcLabels[br]}, ${dstLabels[bc]})`,
-      exp: `Highest penalty: <strong>${penLabel}</strong>. Min cost in that ${isRow?'row':'column'} = <strong>${minCost}</strong> at (${srcLabels[br]}, ${dstLabels[bc]}). Allocate <strong>${qty}</strong> units.${note}`,
+      exp: `Highest penalty: <strong>${penLabel}</strong>. Min cost in that ${isRow?'row':'column'} = <strong>${minCost}</strong> at (${srcLabels[br]}, ${dstLabels[bc]}). Allocate <strong>${qty}</strong> units.${note}${penaltyDetailsHtml}`,
       alloc: cloneMatrix(alloc), highlighted: { r: br, c: bc },
       supply: [...sup], demand: [...dem]
     });
