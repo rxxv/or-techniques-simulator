@@ -709,7 +709,7 @@ function transportRenderTable(prefix, alloc, costs, srcLabels, dstLabels, highli
       if (alloc[i][j] > 0) {
         html += `<span style="display:block;font-size:0.65rem;color:var(--text3)">${costs[i][j]}</span><strong>${alloc[i][j]}</strong>`;
       } else if (isCrossed) {
-        html += `<span style="color:var(--text3);text-decoration:line-through">${costs[i][j]}</span><span style="color:var(--danger);font-weight:bold;margin-left:4px">×</span>`;
+        html += `<span style="color:var(--text3);font-weight:700;font-size:0.95rem">✕</span>`;
       } else {
         html += `<span style="color:var(--text3)">${costs[i][j]}</span>`;
       }
