@@ -1093,8 +1093,8 @@ function buildSequencing() {
         </div>
       </div>
       
-      <div id="seq-single-summary" class="mt-24"></div>
       <div id="seq-single-details" class="mt-24"></div>
+      <div id="seq-single-summary" class="mt-24"></div>
     </div>
     
     <div id="seq-johnson-container" style="display:none">
@@ -1269,7 +1269,7 @@ function seqSingleSolve() {
               ${r.rows.map(row => `<tr>
                   <td style="font-weight:700;color:var(--primary2)">${row.name}</td>
                   <td>${row.pt}</td><td class="text-accent fw-700">${row.flow}</td><td>${row.dd}</td>
-                  <td class="${row.lateness > 0 ? 'text-danger fw-700' : 'text-muted'}">${row.lateness > 0 ? row.lateness : '—'}</td>
+                  <td class="${row.lateness > 0 ? 'text-danger fw-700' : 'text-muted'}">${row.lateness > 0 ? `${row.flow} - ${row.dd} = ${row.lateness}` : '—'}</td>
                 </tr>`).join('')}
               <tr style="background:var(--bg2);font-weight:700"><td>Σ</td><td>${r.totalProc}</td><td class="text-accent">${r.totalFlow}</td><td>—</td><td class="text-danger">${r.totalLateness}</td></tr>
             </tbody>
