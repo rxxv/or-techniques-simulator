@@ -843,7 +843,10 @@ function lccSolve() {
   const m = supply.length, n = demand.length;
   const alloc = makeMatrix(m, n);
   let sup = [...supply], dem = [...demand];
-  const elim = { rows: Array(m).fill(false), cols: Array(n).fill(false) };
+  const elim = {
+    rows: Array.from({ length: m }, (_, i) => supply[i] === 0),
+    cols: Array.from({ length: n }, (_, j) => demand[j] === 0)
+  };
   const steps = [];
   const srcLabels = Array.from({ length: m }, (_, k) => `S${k + 1}`);
   const dstLabels = Array.from({ length: n }, (_, k) => `D${k + 1}`);
@@ -921,8 +924,8 @@ function vamSolve() {
   const m = supply.length, n = demand.length;
   const alloc = makeMatrix(m, n);
   let sup = [...supply], dem = [...demand];
-  const elimRows = Array(m).fill(false);
-  const elimCols = Array(n).fill(false);
+  const elimRows = Array.from({ length: m }, (_, i) => supply[i] === 0);
+  const elimCols = Array.from({ length: n }, (_, j) => demand[j] === 0);
   const steps = [];
   const srcLabels = Array.from({ length: m }, (_, k) => `S${k + 1}`);
   const dstLabels = Array.from({ length: n }, (_, k) => `D${k + 1}`);
