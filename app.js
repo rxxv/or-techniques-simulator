@@ -493,9 +493,17 @@ function hungarianRenderStep(s, stepNum, n) {
     for (let j = 0; j < n; j++) {
       const v = s.mat[i][j];
       let cls = '';
-      if (assignSet.has(`${i},${j}`)) cls = 'highlight-cell';
-      else if (v === 0) cls = 'zero-cell';
-      if (rcovered[i] || ccovered[j]) cls += ' pivot-cell';
+      if (assignSet.size > 0) {
+        if (assignSet.has(`${i},${j}`)) cls = 'highlight-cell';
+        else {
+          const sharesRowOrCol = (s.assignment || []).some(([ai, aj]) => ai === i || aj === j);
+          if (sharesRowOrCol) cls = 'crossed-cell';
+        }
+      } else {
+        if (assignSet.has(`${i},${j}`)) cls = 'highlight-cell';
+        else if (v === 0) cls = 'zero-cell';
+        if (rcovered[i] || ccovered[j]) cls += ' pivot-cell';
+      }
       tableHTML += `<td class="${cls}">${v}</td>`;
     }
     tableHTML += `</tr>`;
