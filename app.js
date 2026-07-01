@@ -986,7 +986,6 @@ function vamSolve() {
 
     const penLabel = isRow ? `Row ${srcLabels[penIdx]} (penalty=${maxPen})` : `Column ${dstLabels[penIdx]} (penalty=${maxPen})`;
     
-    // Detailed penalty calculation log block
     const penaltyDetailsHtml = `
       <div style="margin-top: 14px; padding: 12px 16px; background: var(--bg2); border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.8rem;">
         <div style="font-weight: 700; color: var(--primary2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; font-family:'Plus Jakarta Sans',sans-serif">Penalty Calculations for active lines:</div>
@@ -1018,55 +1017,270 @@ function vamSolve() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  5. SEQUENCING PROBLEM (JOHNSON'S ALGORITHM)
+//  5. SEQUENCING PROBLEM
 // ─────────────────────────────────────────────────────────────────────────────
 function buildSequencing() {
   const el = $('page-sequencing');
   el.innerHTML = `
     <div class="page-header">
       <div class="breadcrumb">🏠 Home <span>›</span> Sequencing Problem</div>
-      <h1>Johnson's Algorithm</h1>
-      <p>Finds the optimal sequence of <em>n</em> jobs on 2 machines to minimise total makespan (completion time). Produces a Gantt chart.</p>
+      <h1>Job Sequencing & Scheduling</h1>
+      <p>Solve scheduling and sequencing problems for Single Machine (FCFS, SPT, LPT, EDD rules) or Multiple Machines (Johnson's Algorithm).</p>
     </div>
-    <div class="grid-2" style="gap:24px">
-      <div class="card">
-        <div class="card-title">Job Configuration</div>
-        <div class="input-row">
-          <div class="form-group">
-            <label class="form-label">Number of Jobs</label>
-            <select class="form-select" id="seq-jobs">
-              <option value="4">4 Jobs</option>
-              <option value="5" selected>5 Jobs</option>
-              <option value="6">6 Jobs</option>
-              <option value="7">7 Jobs</option>
-              <option value="8">8 Jobs</option>
-            </select>
+    
+    <div class="tab-container" id="seq-tabs" style="margin-top:20px">
+      <button class="tab-btn active" id="seq-tab-single" onclick="switchSeqTab('single')">Single Machine Scheduling</button>
+      <button class="tab-btn" id="seq-tab-johnson" onclick="switchSeqTab('johnson')">Johnson's Algorithm (2 Machines)</button>
+    </div>
+    
+    <div id="seq-single-container">
+      <div class="grid-2" style="gap:24px">
+        <div class="card">
+          <div class="card-title">Job & Due Date Configuration</div>
+          <div class="input-row">
+            <div class="form-group">
+              <label class="form-label">Number of Jobs</label>
+              <select class="form-select" id="seq-single-jobs" onchange="seqSingleGenJobs()">
+                <option value="4">4 Jobs</option>
+                <option value="5">5 Jobs</option>
+                <option value="6" selected>6 Jobs</option>
+                <option value="7">7 Jobs</option>
+                <option value="8">8 Jobs</option>
+              </select>
+            </div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-outline btn-sm" onclick="seqSingleGenJobs()">Randomize Jobs</button>
+            <button class="btn btn-secondary btn-sm" onclick="seqSingleLoadExample()">Load Example</button>
+          </div>
+          <div id="seq-single-jobs-table" class="mt-16"></div>
+          <div class="btn-group mt-16" id="seq-single-solve-btns" style="display:none">
+            <button class="btn btn-primary" onclick="seqSingleSolve()">▶ Solve All Rules</button>
+            <button class="btn btn-secondary btn-sm" onclick="seqSingleReset()">Reset</button>
           </div>
         </div>
-        <div class="btn-group">
-          <button class="btn btn-outline btn-sm" onclick="seqGenJobs()">Generate Jobs</button>
-          <button class="btn btn-secondary btn-sm" onclick="seqLoadExample()">Load Example</button>
-        </div>
-        <div id="seq-jobs-table" class="mt-16"></div>
-        <div class="btn-group mt-16" id="seq-solve-btns" style="display:none">
-          <button class="btn btn-primary" onclick="seqSolve()">▶ Solve Step-by-Step</button>
-          <button class="btn btn-secondary btn-sm" onclick="seqReset()">Reset</button>
+        
+        <div class="card">
+          <div class="card-title">Scheduling Rules Guide</div>
+          <div style="font-size:0.83rem;color:var(--text2);line-height:1.7;display:flex;flex-direction:column;gap:12px">
+            <div>
+              <strong style="color:var(--primary2)">1. FCFS (First Come, First Served):</strong>
+              <span style="display:block;margin-top:2px">Jobs are processed in the order they arrived (no sorting required).</span>
+            </div>
+            <div>
+              <strong style="color:var(--success)">2. SPT (Shortest Processing Time):</strong>
+              <span style="display:block;margin-top:2px">Sort jobs by processing time ascending. Minimizes average flow time.</span>
+            </div>
+            <div>
+              <strong style="color:var(--warning)">3. LPT (Longest Processing Time):</strong>
+              <span style="display:block;margin-top:2px">Sort jobs by processing time descending. Often performs poorly on lateness.</span>
+            </div>
+            <div>
+              <strong style="color:var(--pink)">4. EDD (Earliest Due Date):</strong>
+              <span style="display:block;margin-top:2px">Sort jobs by due date ascending. Minimizes maximum lateness.</span>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:5px">
+              <strong style="color:var(--text)">Performance Metrics Formulas:</strong>
+              <ul style="margin-left:18px;margin-top:4px;list-style-type:disc">
+                <li><strong>Flow Time (Fk):</strong> Cumulative processing time up to job k.</li>
+                <li><strong>Lateness (Lk):</strong> Fk - Due Datek (or 0 if finished early).</li>
+                <li><strong>Avg Completion Time:</strong> Σ Flow Time / n</li>
+                <li><strong>Avg Lateness:</strong> Σ Lateness / n</li>
+                <li><strong>Avg Jobs in System:</strong> Σ Flow Time / Σ Processing Time</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-title">Johnson's Rule Guide</div>
-        <div style="font-size:0.83rem;color:var(--text2);line-height:1.8;display:flex;flex-direction:column;gap:10px">
-          ${['List all jobs with processing time on Machine 1 and Machine 2','Find the job with the smallest processing time (any machine)','If smallest is on M1 → schedule job first; if M2 → schedule last','Remove that job from the list and repeat','Build Gantt chart from the final sequence'].map((s,i)=>`
-            <div style="display:flex;gap:10px"><div style="min-width:24px;height:24px;border-radius:50%;background:rgba(236,72,153,0.2);color:var(--pink);font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center">${i+1}</div><span>${s}</span></div>`).join('')}
-        </div>
-        <div class="alert alert-info mt-16"><span>🎯 Johnson's Algorithm guarantees the minimum makespan for n-job 2-machine scheduling.</span></div>
-      </div>
+      
+      <div id="seq-single-summary" class="mt-24"></div>
+      <div id="seq-single-details" class="mt-24"></div>
     </div>
-    <div id="seq-steps" class="steps-container"></div>
-    <div id="seq-result"></div>
-    <div id="seq-gantt"></div>
+    
+    <div id="seq-johnson-container" style="display:none">
+      <div class="grid-2" style="gap:24px">
+        <div class="card">
+          <div class="card-title">Job Configuration (2 Machines)</div>
+          <div class="input-row">
+            <div class="form-group">
+              <label class="form-label">Number of Jobs</label>
+              <select class="form-select" id="seq-jobs" onchange="seqGenJobs()">
+                <option value="4">4 Jobs</option>
+                <option value="5" selected>5 Jobs</option>
+                <option value="6">6 Jobs</option>
+                <option value="7">7 Jobs</option>
+                <option value="8">8 Jobs</option>
+              </select>
+            </div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-outline btn-sm" onclick="seqGenJobs()">Generate Jobs</button>
+            <button class="btn btn-secondary btn-sm" onclick="seqLoadExample()">Load Example</button>
+          </div>
+          <div id="seq-jobs-table" class="mt-16"></div>
+          <div class="btn-group mt-16" id="seq-solve-btns" style="display:none">
+            <button class="btn btn-primary" onclick="seqSolve()">▶ Solve Step-by-Step</button>
+            <button class="btn btn-secondary btn-sm" onclick="seqReset()">Reset</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Johnson's Rule Guide</div>
+          <div style="font-size:0.83rem;color:var(--text2);line-height:1.8;display:flex;flex-direction:column;gap:10px">
+            ${['List all jobs with processing time on Machine 1 and Machine 2','Find the job with the smallest processing time (any machine)','If smallest is on M1 → schedule job first; if M2 → schedule last','Remove that job from the list and repeat','Build Gantt chart from the final sequence'].map((s,i)=>'<div style="display:flex;gap:10px"><div style="min-width:24px;height:24px;border-radius:50%;background:rgba(236,72,153,0.2);color:var(--pink);font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center">' + (i+1) + '</div><span>' + s + '</span></div>').join('')}
+          </div>
+          <div class="alert alert-info mt-16"><span>🎯 Johnson's Algorithm guarantees the minimum makespan for n-job 2-machine scheduling.</span></div>
+        </div>
+      </div>
+      <div id="seq-steps" class="steps-container"></div>
+      <div id="seq-result"></div>
+      <div id="seq-gantt"></div>
+    </div>
   `;
+  seqSingleLoadExample();
   seqLoadExample();
+}
+
+function switchSeqTab(mode) {
+  const tabs = document.querySelectorAll('#seq-tabs .tab-btn');
+  tabs.forEach(t => t.classList.remove('active'));
+  const selectedTab = $(`seq-tab-${mode}`);
+  if (selectedTab) selectedTab.classList.add('active');
+
+  if (mode === 'single') {
+    $('seq-single-container').style.display = 'block';
+    $('seq-johnson-container').style.display = 'none';
+  } else {
+    $('seq-single-container').style.display = 'none';
+    $('seq-johnson-container').style.display = 'block';
+  }
+}
+
+let seqSingleJobs = [];
+function seqSingleRenderJobsTable(jobs) {
+  let html = `<div class="matrix-container"><table class="matrix-table">
+    <thead><tr><th>Job</th><th>Processing Time (Days)</th><th>Due Date (Days)</th></tr></thead><tbody>`;
+  jobs.forEach((job, i) => {
+    html += `<tr>
+      <td style="font-weight:700;color:var(--primary2)">Job ${String.fromCharCode(65 + i)}</td>
+      <td><input class="cell-input" id="seq-single-pt-${i}" type="number" value="${job.pt}" min="1" max="99" style="width:70px" /></td>
+      <td><input class="cell-input" id="seq-single-dd-${i}" type="number" value="${job.dd}" min="1" max="99" style="width:70px" /></td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>`;
+  $('seq-single-jobs-table').innerHTML = html;
+  $('seq-single-solve-btns').style.display = 'flex';
+  $('seq-single-summary').innerHTML = '';
+  $('seq-single-details').innerHTML = '';
+}
+
+function seqSingleGenJobs() {
+  const n = +$('seq-single-jobs').value;
+  seqSingleJobs = Array.from({ length: n }, () => ({
+    pt: Math.floor(Math.random() * 15) + 2,
+    dd: Math.floor(Math.random() * 30) + 10
+  }));
+  seqSingleRenderJobsTable(seqSingleJobs);
+}
+
+function seqSingleLoadExample() {
+  seqSingleJobs = [
+    { pt: 4, dd: 34 },
+    { pt: 10, dd: 25 },
+    { pt: 2, dd: 18 },
+    { pt: 14, dd: 30 },
+    { pt: 12, dd: 14 },
+    { pt: 6, dd: 22 }
+  ];
+  $('seq-single-jobs').value = '6';
+  seqSingleRenderJobsTable(seqSingleJobs);
+}
+
+function seqSingleReset() {
+  $('seq-single-summary').innerHTML = '';
+  $('seq-single-details').innerHTML = '';
+}
+
+function seqSingleReadJobs() {
+  const n = seqSingleJobs.length;
+  return Array.from({ length: n }, (_, i) => ({
+    name: String.fromCharCode(65 + i),
+    pt: +(($(`seq-single-pt-${i}`)?.value) ?? seqSingleJobs[i].pt),
+    dd: +(($(`seq-single-dd-${i}`)?.value) ?? seqSingleJobs[i].dd)
+  }));
+}
+
+function seqSingleSolve() {
+  const jobs = seqSingleReadJobs();
+  const n = jobs.length;
+  const rules = [
+    { name: 'First Come, First Served (FCFS)', key: 'FCFS', sortFn: (a, b) => 0 },
+    { name: 'Shortest Processing Time (SPT)', key: 'SPT', sortFn: (a, b) => a.pt - b.pt },
+    { name: 'Longest Processing Time (LPT)', key: 'LPT', sortFn: (a, b) => b.pt - a.pt },
+    { name: 'Earliest Due Date (EDD)', key: 'EDD', sortFn: (a, b) => a.dd - b.dd }
+  ];
+  const results = [];
+  rules.forEach(r => {
+    const sortedJobs = [...jobs];
+    if (r.key !== 'FCFS') sortedJobs.sort(r.sortFn);
+    let cumFlow = 0, totalFlow = 0, totalLateness = 0, totalProc = 0;
+    const tableRows = [];
+    sortedJobs.forEach(job => {
+      cumFlow += job.pt; totalFlow += cumFlow; totalProc += job.pt;
+      const lateness = Math.max(0, cumFlow - job.dd);
+      totalLateness += lateness;
+      tableRows.push({ name: job.name, pt: job.pt, flow: cumFlow, dd: job.dd, lateness: lateness });
+    });
+    results.push({ ruleName: r.name, ruleKey: r.key, rows: tableRows, totalProc, totalFlow, totalLateness, avgLateness: totalLateness / n, avgCompletion: totalFlow / n, avgJobsSystem: totalFlow / totalProc });
+  });
+  let summaryHtml = `
+    <div class="result-card">
+      <div class="result-title">📊 Scheduling Rules Performance Summary</div>
+      <p style="font-size:0.83rem;color:var(--text2);margin-bottom:16px">Compare all four scheduling rules side-by-side.</p>
+      <div class="matrix-container">
+        <table class="matrix-table">
+          <thead><tr><th>Scheduling Rule</th><th>Total Flow</th><th>Total Lateness</th><th>Avg Completion</th><th>Avg Lateness</th><th>Avg Jobs</th></tr></thead>
+          <tbody>`;
+  const minFlow = Math.min(...results.map(r => r.totalFlow));
+  const minLateness = Math.min(...results.map(r => r.totalLateness));
+  const minAvgComp = Math.min(...results.map(r => r.avgCompletion));
+  const minAvgLate = Math.min(...results.map(r => r.avgLateness));
+  const minAvgJobs = Math.min(...results.map(r => r.avgJobsSystem));
+  results.forEach(r => {
+    summaryHtml += `<tr>
+        <td style="font-weight:700;text-align:left;color:var(--primary2)">${r.ruleName}</td>
+        <td class="${r.totalFlow === minFlow ? 'text-success fw-700' : ''}">${r.totalFlow}</td>
+        <td class="${r.totalLateness === minLateness ? 'text-success fw-700' : ''}">${r.totalLateness}</td>
+        <td class="${r.avgCompletion === minAvgComp ? 'text-success fw-700' : ''}">${r.avgCompletion.toFixed(2)}</td>
+        <td class="${r.avgLateness === minAvgLate ? 'text-success fw-700' : ''}">${r.avgLateness.toFixed(2)}</td>
+        <td class="${r.avgJobsSystem === minAvgJobs ? 'text-success fw-700' : ''}">${r.avgJobsSystem.toFixed(2)}</td>
+      </tr>`;
+  });
+  summaryHtml += `</tbody></table></div></div>`;
+  $('seq-single-summary').innerHTML = summaryHtml;
+  let detailsHtml = `<div class="grid-2" style="gap:24px">`;
+  results.forEach(r => {
+    detailsHtml += `
+      <div class="card">
+        <div class="card-title" style="border-bottom: 2px solid var(--border); padding-bottom: 6px; color: var(--primary2)">Rule: ${r.ruleName}</div>
+        <div class="matrix-container">
+          <table class="matrix-table">
+            <thead><tr><th>Job</th><th>Proc</th><th>Flow</th><th>Due</th><th>Lateness</th></tr></thead>
+            <tbody>
+              ${r.rows.map(row => `<tr>
+                  <td style="font-weight:700;color:var(--primary2)">${row.name}</td>
+                  <td>${row.pt}</td><td class="text-accent fw-700">${row.flow}</td><td>${row.dd}</td>
+                  <td class="${row.lateness > 0 ? 'text-danger fw-700' : 'text-muted'}">${row.lateness > 0 ? row.lateness : '—'}</td>
+                </tr>`).join('')}
+              <tr style="background:var(--bg2);font-weight:700"><td>Σ</td><td>${r.totalProc}</td><td class="text-accent">${r.totalFlow}</td><td>—</td><td class="text-danger">${r.totalLateness}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  });
+  detailsHtml += `</div>`;
+  $('seq-single-details').innerHTML = detailsHtml;
+  animateResult('#seq-single-summary .result-card');
+  animateSteps('#seq-single-details');
 }
 
 function seqRenderJobsTable(jobs) {
@@ -1146,8 +1360,6 @@ function seqSolve() {
   }
 
   const sequence = [...front, ...back];
-
-  // Render steps
   const stepsEl = $('seq-steps');
   stepsEl.innerHTML = '';
   steps.forEach((s, i) => {
@@ -1156,50 +1368,22 @@ function seqSolve() {
         <div class="step-header"><div class="step-number">${i + 1}</div><div class="step-title">${s.title}</div></div>
         <div class="step-body">
           <div class="step-explanation">${s.exp}</div>
-          <div class="flex-center gap-8 mt-8 flex-wrap">
-            <span class="stat-chip blue">Remaining Jobs: ${s.remaining.map(j => `J${j.id}`).join(', ')}</span>
-            <span class="stat-chip green">Front: [${s.front.map(id=>`J${id}`).join(' → ')}]</span>
-            <span class="stat-chip yellow">Back: [${s.back.map(id=>`J${id}`).join(' → ')}]</span>
-          </div>
         </div>
       </div>`;
   });
   animateSteps('#seq-steps');
 
-  // Compute Gantt timeline
   const timeline = computeGantt(sequence, jobs);
   const makespan = timeline.m2[timeline.m2.length - 1].end;
 
-  // Result
   $('seq-result').innerHTML = `
     <div class="result-card">
-      <div class="result-title">✅ Optimal Sequence Found (Johnson's Algorithm)</div>
-      <div class="result-value">Makespan = <span id="seq-makespan-display">${makespan}</span> units</div>
-      <div class="result-detail" style="margin-top:8px">
-        Optimal Sequence: <strong class="font-mono" style="color:var(--primary2)">${sequence.map(j => `J${j.id}`).join(' → ')}</strong>
-      </div>
-      <div class="separator" style="margin:16px 0"></div>
-      <div class="matrix-container">
-        <table class="matrix-table">
-          <thead><tr><th>Job</th><th>M1 Start</th><th>M1 End</th><th>M2 Start</th><th>M2 End</th></tr></thead>
-          <tbody>
-            ${sequence.map((job, k) => `<tr>
-              <td style="color:var(--primary2);font-weight:700">J${job.id}</td>
-              <td>${timeline.m1[k].start}</td>
-              <td class="text-accent">${timeline.m1[k].end}</td>
-              <td>${timeline.m2[k].start}</td>
-              <td class="text-success fw-700">${timeline.m2[k].end}</td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
+      <div class="result-title">✅ Optimal Sequence Found</div>
+      <div class="result-value">Makespan = <span id="seq-makespan-display">${makespan}</span></div>
+      <div class="result-detail">Optimal Sequence: <strong>${sequence.map(j => `J${j.id}`).join(' → ')}</strong></div>
     </div>`;
 
-  animateResult('#seq-result .result-card');
-  showToast(`✅ Johnson's Algorithm complete — Makespan: ${makespan} units`);
   setTimeout(() => animateCount('seq-makespan-display', makespan), 50);
-
-  // Gantt chart
   renderGantt(sequence, timeline, makespan);
 }
 
@@ -1222,48 +1406,21 @@ function computeGantt(sequence, jobs) {
 function renderGantt(sequence, timeline, makespan) {
   const colors = colorsFor(sequence.length);
   const scale = 600 / makespan;
-
   let m1Bars = '', m2Bars = '';
   sequence.forEach((job, k) => {
-    const c = colors[k];
-    const m1 = timeline.m1[k];
-    const m2 = timeline.m2[k];
-    const w1 = (m1.end - m1.start) * scale;
-    const x1 = m1.start * scale;
-    const w2 = (m2.end - m2.start) * scale;
-    const x2 = m2.start * scale;
-    m1Bars += `<div class="gantt-bar" style="left:${x1}px;width:${w1}px;background:${c};opacity:0.9">J${job.id}</div>`;
-    m2Bars += `<div class="gantt-bar" style="left:${x2}px;width:${w2}px;background:${c};opacity:0.9">J${job.id}</div>`;
+    const c = colors[k], m1 = timeline.m1[k], m2 = timeline.m2[k];
+    m1Bars += `<div class="gantt-bar" style="left:${m1.start*scale}px;width:${(m1.end-m1.start)*scale}px;background:${c}">J${job.id}</div>`;
+    m2Bars += `<div class="gantt-bar" style="left:${m2.start*scale}px;width:${(m2.end-m2.start)*scale}px;background:${c}">J${job.id}</div>`;
   });
-
-  // Tick marks
-  const tickInterval = makespan <= 30 ? 5 : makespan <= 60 ? 10 : 20;
-  let ticks = '';
-  for (let t = 0; t <= makespan; t += tickInterval) {
-    ticks += `<div class="gantt-tick" style="position:absolute;left:${t*scale}px">${t}</div>`;
-  }
-
   $('seq-gantt').innerHTML = `
     <div class="card mt-24">
       <div class="card-title">📊 Gantt Chart (Makespan = ${makespan})</div>
       <div class="gantt-container">
-        <div style="min-width:660px">
-          <div class="gantt-row">
-            <div class="gantt-label">Machine 1</div>
-            <div class="gantt-bar-container" style="position:relative;height:40px;width:${makespan*scale}px;min-width:600px">${m1Bars}</div>
-          </div>
-          <div class="gantt-row" style="margin-top:8px">
-            <div class="gantt-label">Machine 2</div>
-            <div class="gantt-bar-container" style="position:relative;height:40px;width:${makespan*scale}px;min-width:600px">${m2Bars}</div>
-          </div>
-          <div class="gantt-row" style="margin-top:4px">
-            <div class="gantt-label"></div>
-            <div style="position:relative;height:20px;width:${makespan*scale}px;min-width:600px">${ticks}</div>
-          </div>
-        </div>
+        <div class="gantt-row"><div class="gantt-label">Machine 1</div><div class="gantt-bar-container" style="position:relative;height:40px;width:${makespan*scale}px">${m1Bars}</div></div>
+        <div class="gantt-row" style="margin-top:8px"><div class="gantt-label">Machine 2</div><div class="gantt-bar-container" style="position:relative;height:40px;width:${makespan*scale}px">${m2Bars}</div></div>
       </div>
       <div class="flex-center gap-8 flex-wrap mt-16">
-        ${sequence.map((job, k) => `<span style="display:inline-flex;align-items:center;gap:6px;font-size:0.8rem"><span style="width:12px;height:12px;border-radius:3px;background:${colors[k]};display:inline-block"></span>J${job.id} (M1:${job.m1}, M2:${job.m2})</span>`).join('')}
+        ${sequence.map((job, k) => '<span style="display:inline-flex;align-items:center;gap:6px;font-size:0.8rem"><span style="width:12px;height:12px;border-radius:3px;background:' + colors[k] + ';display:inline-block"></span>J' + job.id + ' (M1:' + job.m1 + ', M2:' + job.m2 + ')</span>').join('')}
       </div>
     </div>`;
 }
